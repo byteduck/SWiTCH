@@ -57,7 +57,13 @@ class MainMenuScreen(private val game: SWITCH) : ScreenAdapter() {
                 Util.slideCamera(guiCam, Util.Direction.LEFT, manager, SWITCH.WIDTH, SWITCH.HEIGHT, Quart.IN, 0f, null)
                 Util.slideCamera(textCam, Util.Direction.LEFT, manager, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat(), Quart.IN, 0f) {type, _ ->
                     if (type == TweenCallback.COMPLETE) {
-                        game.screen = GamemodeScreen(game)
+                        val playedTutorial = game.prefs!!.getBoolean("playedTutorial", false)
+                        game.prefs!!.putBoolean("playedTutorial", true)
+                        game.prefs!!.flush()
+                        if(playedTutorial)
+                            game.screen = GamemodeScreen(game)
+                        else
+                            game.screen = GameScreen(game, false, false, true)
                     }
                 }
             }

@@ -13,10 +13,8 @@ import com.badlogic.gdx.math.Vector3
 import aurelienribon.tweenengine.Tween
 import aurelienribon.tweenengine.TweenCallback
 import aurelienribon.tweenengine.TweenManager
-import aurelienribon.tweenengine.equations.Back
-import aurelienribon.tweenengine.equations.Bounce
-import aurelienribon.tweenengine.equations.Quad
-import aurelienribon.tweenengine.equations.Quart
+import aurelienribon.tweenengine.equations.*
+import sun.rmi.runtime.Log
 import zyzxdev.swtch.SWITCH
 import zyzxdev.swtch.Square
 import zyzxdev.swtch.util.Assets
@@ -36,8 +34,9 @@ class GameScreen
  * *
  * @param tutorial Is it a tutorial?
  */
-(private val game: SWITCH, private val size: Boolean, private val mode: Boolean, private val tutorial: Boolean) : ScreenAdapter() {
-    private val guiCam: OrthographicCamera
+(private val game: SWITCH, private val size: Boolean, private val mode: Boolean, private var tutorial: Boolean) : ScreenAdapter() {
+
+    private val guiCam: OrthographicCamera = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
     private val textCam: OrthographicCamera
     private val manager: TweenManager
     private var squareSize: Float = 0.toFloat()
@@ -55,9 +54,11 @@ class GameScreen
     private var score = -1
     private val maxTime = 20f
     private var textLayout: GlyphLayout? = null
+    private val currentTutorialTap: Vector2 = Vector2()
+    private var tutorialTapSize: Vector2 = Vector2(0f, 0f) //y not used, using vector2 for tweening
+    private var currentTutorialStep = 0
 
     init {
-        guiCam = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
         guiCam.position.set(-SWITCH.WIDTH / 2, SWITCH.HEIGHT / 2, 0f)
 
         textCam = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
@@ -73,6 +74,7 @@ class GameScreen
         squareSize = boardSize / grid.size
         squareSpacing = squareSize * 0.1f
         squareSize -= squareSpacing
+        tutorialTapSize.x = squareSize*0.4f
 
         for (x in grid.indices)
             for (y in grid.indices) { //Square pos is at the center of the square for scaling
@@ -83,7 +85,10 @@ class GameScreen
                         SWITCH.HEIGHT * 0.5f - boardSize / 2 + y * squareSize + (y + 0.5f) * squareSpacing, squareSize, squareSize)
             }
 
-        populateGrid()
+        if(!tutorial)
+            populateGrid()
+        else
+            populateTutorial()
 
         backButtonRender = Rectangle(20 + SWITCH.WIDTH * 0.1f, SWITCH.HEIGHT - 20f - SWITCH.WIDTH * 0.1f, -SWITCH.WIDTH * 0.1f, SWITCH.WIDTH * 0.1f)
         backButtonTouch = Rectangle(20f, SWITCH.HEIGHT - 20f - SWITCH.WIDTH * 0.1f, SWITCH.WIDTH * 0.1f, SWITCH.WIDTH * 0.1f)
@@ -98,6 +103,14 @@ class GameScreen
         Util.slideCamera(guiCam, Util.Direction.CENTER, manager, SWITCH.WIDTH, SWITCH.HEIGHT, Quart.OUT, 0f, null)
         Util.slideCamera(textCam, Util.Direction.CENTER, manager, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat(), Quart.OUT, 0f) { _, _ ->
             doUpdate = true
+        }
+
+        if(tutorial){
+            val touchTipTween = Tween.to(tutorialTapSize, Vector2Accessor.TYPE_XY, 1.0f)
+                    .ease(Quad.INOUT)
+                    .repeatYoyo(Tween.INFINITY, 0f)
+            touchTipTween.target(squareSize*0.25f, 0f)
+            touchTipTween.start(manager)
         }
     }
 
@@ -132,6 +145,17 @@ class GameScreen
         }
     }
 
+    private fun populateTutorial() {
+        for (x in grid.indices)
+            for (y in 0..grid[x].size - 1)
+                grid[x][y]?.setColor(1)
+        grid[0][2]?.setColor(0)
+        grid[1][2]?.setColor(2)
+        grid[2][0]?.setColor(2)
+        grid[2][1]?.setColor(0)
+        currentTutorialTap.set(0f,2f)
+    }
+
     private fun update() {
         manager.update(Gdx.graphics.deltaTime)
         if (!doUpdate) return
@@ -150,28 +174,45 @@ class GameScreen
             }
 
             for (x in grid.indices)
-                for (y in grid.indices)
-                    if (grid[x][y]?.touchRectangle!!.contains(touchPoint.x, touchPoint.y)) {
-                        if (selectedSquare == null) {
-                            selectedSquare = Vector2(x.toFloat(), y.toFloat())
-                            grid[x][y]?.setSizeWithTween(squareSize * 0.85f, 0.15f)?.start(manager)
-                        } else {
-                            val square2 = grid[selectedSquare!!.x.toInt()][selectedSquare!!.y.toInt()]
-                            square2?.setSizeWithTween(squareSize, 0.15f)?.start(manager)
-                            if (square2?.colorID != grid[x][y]?.colorID && Math.sqrt(Math.pow((x - selectedSquare!!.x).toDouble(), 2.0) + Math.pow((y - selectedSquare!!.y).toDouble(), 2.0)) == 1.0) {
-                                val color = Util.reverseColorChanges[grid[x][y]?.colorID.toString() + "," + square2?.colorID]
-                                grid[x][y]?.setColorWithTween(color!!)?.start(manager)
-                                square2?.setColorWithTween(color!!)?.start(manager)
-
-                                if (checkGrid()) {
-                                    selectedSquare = null
-                                    win()
-                                    return
-                                }
-                            }
-                            selectedSquare = null
-                        }
+                for(y in grid.indices){
+                    if(!grid[x][y]?.touchRectangle!!.contains(touchPoint.x, touchPoint.y)) continue
+                    if(tutorial && (x != currentTutorialTap.x.toInt() || y != currentTutorialTap.y.toInt())) continue
+                    else{
+                        nextTouchPoint()
                     }
+                    if (selectedSquare == null) {
+                        selectedSquare = Vector2(x.toFloat(), y.toFloat())
+                        grid[x][y]?.setSizeWithTween(squareSize * 0.85f, 0.15f)?.start(manager)
+                    } else {
+                        val square2 = grid[selectedSquare!!.x.toInt()][selectedSquare!!.y.toInt()]
+                        square2?.setSizeWithTween(squareSize, 0.15f)?.start(manager)
+                        //Check if square is adjacent to the selected square
+                        if (square2?.colorID != grid[x][y]?.colorID && Math.sqrt(Math.pow((x - selectedSquare!!.x).toDouble(), 2.0) + Math.pow((y - selectedSquare!!.y).toDouble(), 2.0)) == 1.0) {
+                            val color = Util.reverseColorChanges[grid[x][y]?.colorID.toString() + "," + square2?.colorID]
+                            grid[x][y]?.setColorWithTween(color!!)?.start(manager)
+                            square2?.setColorWithTween(color!!)?.start(manager)
+
+                            if (checkGrid()) {
+                                selectedSquare = null
+                                win()
+                                return
+                            }
+                        }
+                        selectedSquare = null
+                    }
+                }
+        }
+    }
+
+    fun nextTouchPoint(){
+        currentTutorialStep++
+        when(currentTutorialStep){
+            1 -> currentTutorialTap.set(1f, 2f)
+            2 -> currentTutorialTap.set(2f, 0f)
+            3 -> currentTutorialTap.set(2f, 1f)
+            4 -> {
+                tutorial = false
+            }
         }
     }
 
@@ -267,6 +308,16 @@ class GameScreen
         game.gamemodeRobotoLight!!.setColor(col, col, col, 1f)
         game.gamemodeRobotoLight!!.draw(game.batch, "" + score, text.x - textLayout!!.width / 2, text.y + textLayout!!.height / 2)
         game.batch?.end()
+
+        if(tutorial){
+            Gdx.gl.glEnable(GL20.GL_BLEND)
+            game.shape?.begin(ShapeRenderer.ShapeType.Filled)
+            game.shape?.setColor(1f, 1f, 1f, 0.5f)
+            val renderRectangle = grid[currentTutorialTap.x.toInt()][currentTutorialTap.y.toInt()]!!.renderRectangle!!
+            game.shape?.circle(renderRectangle.x, renderRectangle.y, tutorialTapSize.x, 50)
+            game.shape?.end()
+            Gdx.gl.glDisable(GL20.GL_BLEND)
+        }
     }
 
     fun updateScore(animate: Boolean) {
