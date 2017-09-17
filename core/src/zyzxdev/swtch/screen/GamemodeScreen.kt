@@ -41,7 +41,7 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
     private val callback = { type: Int, source: BaseTween<*> ->
         if (type == TweenCallback.COMPLETE) {
             if (playHit)
-                game.screen = GameScreen(game, selectedSize, selectedMode, true)
+                game.screen = GameScreen(game, selectedSize, selectedMode, false)
             else
                 game.screen = MainMenuScreen(game)
         }

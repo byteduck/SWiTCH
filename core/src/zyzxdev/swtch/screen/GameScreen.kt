@@ -206,14 +206,21 @@ class GameScreen
 
     fun nextTouchPoint(){
         currentTutorialStep++
-        when(currentTutorialStep){
-            1 -> currentTutorialTap.set(1f, 2f)
-            2 -> currentTutorialTap.set(2f, 0f)
-            3 -> currentTutorialTap.set(2f, 1f)
-            4 -> {
-                tutorial = false
-            }
+
+        if(currentTutorialStep == 4) {
+            tutorial = false
+            return
         }
+
+        val target = when(currentTutorialStep){
+            1 -> Vector2(1f, 2f)
+            2 -> Vector2(2f, 0f)
+            3 -> Vector2(2f, 1f)
+            else -> Vector2()
+        }
+
+        Tween.to(currentTutorialTap, Vector2Accessor.TYPE_XY, 0.5f)
+                .ease(Cubic.INOUT).target(target.x, target.y).start(manager)
     }
 
     private fun lose(showGameOver: Boolean) {
@@ -313,8 +320,8 @@ class GameScreen
             Gdx.gl.glEnable(GL20.GL_BLEND)
             game.shape?.begin(ShapeRenderer.ShapeType.Filled)
             game.shape?.setColor(1f, 1f, 1f, 0.5f)
-            val renderRectangle = grid[currentTutorialTap.x.toInt()][currentTutorialTap.y.toInt()]!!.renderRectangle!!
-            game.shape?.circle(renderRectangle.x, renderRectangle.y, tutorialTapSize.x, 50)
+            game.shape?.circle(SWITCH.WIDTH * 0.5f - boardSize / 2 + (currentTutorialTap.x + 0.5f) * squareSize + (currentTutorialTap.x + 0.5f) * squareSpacing,
+                    SWITCH.HEIGHT * 0.5f - boardSize / 2 + (currentTutorialTap.y + 0.5f) * squareSize + (currentTutorialTap.y + 0.5f) * squareSpacing, tutorialTapSize.x, 50)
             game.shape?.end()
             Gdx.gl.glDisable(GL20.GL_BLEND)
         }
