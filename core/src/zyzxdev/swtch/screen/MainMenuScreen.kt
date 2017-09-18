@@ -18,28 +18,24 @@ import zyzxdev.swtch.SWITCH
 import zyzxdev.swtch.util.Util
 
 class MainMenuScreen(private val game: SWITCH, private val initial:Boolean = false) : ScreenAdapter() {
-    private val guiCam: OrthographicCamera
-    private val textCam: OrthographicCamera
+    private val guiCam: OrthographicCamera = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
+    private val textCam: OrthographicCamera = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
     private val touchPoint = Vector3()
     private val manager: TweenManager
+    private val switchLogo: Rectangle
 
     /** LAYOUT VARS  */
     private val playButton: Rectangle
     private val title: Vector2
 
     init {
-
-        guiCam = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
-        if(initial)
-            guiCam.position.set(-SWITCH.WIDTH / 2f, SWITCH.HEIGHT / 2, 0f)
-        else
-            guiCam.position.set(SWITCH.WIDTH * 1.5f, SWITCH.HEIGHT / 2, 0f)
-
-        textCam = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-        if(initial)
+        if(initial) {
             textCam.position.set(-Gdx.graphics.width / 2f, Gdx.graphics.height / 2f, 0f)
-        else
+            guiCam.position.set(-SWITCH.WIDTH / 2f, SWITCH.HEIGHT / 2, 0f)
+        }else {
             textCam.position.set(Gdx.graphics.width * 1.5f, Gdx.graphics.height / 2f, 0f)
+            guiCam.position.set(SWITCH.WIDTH * 1.5f, SWITCH.HEIGHT / 2, 0f)
+        }
 
         /* PLAY BUTTON LAYOUT */
         val squareSize = SWITCH.WIDTH * 0.2f
@@ -48,6 +44,10 @@ class MainMenuScreen(private val game: SWITCH, private val initial:Boolean = fal
         /* TITLE LAYOUT */
         val titleLayout = FontLayoutManager.getFontLayout("S  W  i  T  C  H", game.mainMenuRobotoLight!!)
         title = Vector2(Gdx.graphics.width / 2 - titleLayout!!.width / 2, Gdx.graphics.height * 0.8f + titleLayout.height / 2)
+
+        /* LOGO LAYOUT */
+        val logoSize = SWITCH.WIDTH*0.35f
+        switchLogo = Rectangle(SWITCH.WIDTH * 0.5f - logoSize * 0.5f, SWITCH.HEIGHT * 0.5f, logoSize, logoSize)
 
         manager = TweenManager()
         Util.slideCamera(guiCam, Util.Direction.CENTER, manager, SWITCH.WIDTH, SWITCH.HEIGHT, Quart.OUT, 0f, null)
@@ -94,6 +94,7 @@ class MainMenuScreen(private val game: SWITCH, private val initial:Boolean = fal
 
         game.batch?.begin()
         game.batch?.draw(Assets.getTexture("squarePlay"), playButton.x, playButton.y, playButton.width, playButton.height)
+        game.batch?.draw(Assets.getTexture("switchLogo"), switchLogo.x, switchLogo.y, switchLogo.width, switchLogo.height)
         game.batch?.end()
     }
 

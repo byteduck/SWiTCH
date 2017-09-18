@@ -41,7 +41,7 @@ class SWITCH(val adManager: AdManager) : Game() {
         println("Inited variables")
 
         /* TEXTURES */
-        Assets.addTexture("switchLogoText", "texture/switchlogotext.png")
+        Assets.addTexture("switchLogo", "texture/switchlogo.png")
         Assets.addTexture("square", "texture/square.png")
         Assets.addTexture("squarePlay", "texture/square-play.png")
         Assets.addTexture("square3x3", "texture/3x3.png")
