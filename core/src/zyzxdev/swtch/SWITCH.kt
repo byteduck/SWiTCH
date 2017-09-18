@@ -1,8 +1,10 @@
 package zyzxdev.swtch
 
+import aurelienribon.tweenengine.Tween
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
+import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -11,15 +13,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import zyzxdev.swtch.nativeInterface.AdManager
+import zyzxdev.swtch.screen.LoadingScreen
+import zyzxdev.swtch.util.*
 
-import aurelienribon.tweenengine.Tween
-import zyzxdev.swtch.screen.GameOverScreen
-import zyzxdev.swtch.screen.MainMenuScreen
-import zyzxdev.swtch.util.ColorAccessor
-import zyzxdev.swtch.util.RectangleAccessor
-import zyzxdev.swtch.util.Vector3Accessor
-
-class SWITCH : Game() {
+class SWITCH(val adManager: AdManager) : Game() {
 
     var batch: SpriteBatch? = null
     var shape: ShapeRenderer? = null
@@ -27,6 +25,10 @@ class SWITCH : Game() {
     var gamemodeRobotoLight: BitmapFont? = null
     var smallRobotoLight: BitmapFont? = null
     var prefs: Preferences? = null
+    var clickOnSound: Sound? = null
+    var clickOffSound: Sound? = null
+    var completeSound: Sound? = null
+    var errSound: Sound? = null
 
     override fun create() {
         WIDTH = Gdx.graphics.width / Gdx.graphics.density
@@ -36,23 +38,62 @@ class SWITCH : Game() {
         shape = ShapeRenderer()
         shape?.setAutoShapeType(true)
 
-        /* TEXTURES */
-        zyzxdev.swtch.util.Assets.addTexture("switchLogoText", "switchlogotext.png")
-        zyzxdev.swtch.util.Assets.addTexture("square", "square.png")
-        zyzxdev.swtch.util.Assets.addTexture("squarePlay", "square-play.png")
-        zyzxdev.swtch.util.Assets.addTexture("square3x3", "3x3.png")
-        zyzxdev.swtch.util.Assets.addTexture("square4x4", "4x4.png")
-        zyzxdev.swtch.util.Assets.addTexture("timed", "timed.png")
-        zyzxdev.swtch.util.Assets.addTexture("casual", "casual.png")
-        zyzxdev.swtch.util.Assets.addTexture("trophy", "trophy.png")
-        zyzxdev.swtch.util.Assets.addTexture("trophyHighScore", "trophy-highscore.png")
+        println("Inited variables")
 
-        Tween.registerAccessor(Vector2::class.java, zyzxdev.swtch.util.Vector2Accessor())
+        /* TEXTURES */
+        Assets.addTexture("switchLogoText", "texture/switchlogotext.png")
+        Assets.addTexture("square", "texture/square.png")
+        Assets.addTexture("squarePlay", "texture/square-play.png")
+        Assets.addTexture("square3x3", "texture/3x3.png")
+        Assets.addTexture("square4x4", "texture/4x4.png")
+        Assets.addTexture("timed", "texture/timed.png")
+        Assets.addTexture("casual", "texture/casual.png")
+        Assets.addTexture("trophy", "texture/trophy.png")
+        Assets.addTexture("trophyHighScore", "texture/trophy-highscore.png")
+        Assets.addTexture("squareAbnormal", "texture/abnormal.png")
+        Assets.addTextureImmediately("qixl-text-med", "texture/qixl-text-med.png")
+
+        println("Inited Textures")
+
+
+        /* SOUND */
+        Assets.assetManager.load("sound/clickon.wav", Sound::class.java)
+        Assets.assetManager.load("sound/clickoff.wav", Sound::class.java)
+        Assets.assetManager.load("sound/complete.mp3", Sound::class.java)
+        Assets.assetManager.load("sound/wrong.mp3", Sound::class.java)
+
+        println("Inited sound")
+
+        Tween.registerAccessor(Vector2::class.java, Vector2Accessor())
         Tween.registerAccessor(Vector3::class.java, Vector3Accessor())
         Tween.registerAccessor(Rectangle::class.java, RectangleAccessor())
         Tween.registerAccessor(Color::class.java, ColorAccessor())
 
-        val generator = FreeTypeFontGenerator(Gdx.files.internal("Roboto-Light.ttf"))
+        println("Inited accessors")
+
+        prefs = Gdx.app.getPreferences("prefs")
+
+        Tween.setCombinedAttributesLimit(4)
+
+        println("Inited!")
+
+        setScreen(LoadingScreen(this))
+    }
+
+    fun assignAssetVariables(){
+        clickOnSound = Assets.assetManager.get("sound/clickon.wav")
+        clickOffSound = Assets.assetManager.get("sound/clickoff.wav")
+        completeSound = Assets.assetManager.get("sound/complete.mp3")
+        errSound = Assets.assetManager.get("sound/wrong.mp3")
+    }
+
+    companion object {
+        var WIDTH: Float = 0.toFloat()
+        var HEIGHT: Float = 0.toFloat()
+    }
+
+    fun loadFonts() {
+        val generator = FreeTypeFontGenerator(Gdx.files.internal("font/Roboto-Light.ttf"))
         val parameter = FreeTypeFontGenerator.FreeTypeFontParameter()
 
         parameter.size = Gdx.graphics.width / 7
@@ -65,17 +106,7 @@ class SWITCH : Game() {
         parameter.size = Gdx.graphics.width / 10
         smallRobotoLight = generator.generateFont(parameter)
 
-        prefs = Gdx.app.getPreferences("prefs")
-
         generator.dispose()
-
-        Tween.setCombinedAttributesLimit(4)
-
-        setScreen(MainMenuScreen(this))
-    }
-
-    companion object {
-        var WIDTH: Float = 0.toFloat()
-        var HEIGHT: Float = 0.toFloat()
+        println("Inited fonts")
     }
 }

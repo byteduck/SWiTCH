@@ -37,6 +37,8 @@ class GameOverScreen internal constructor(private val game: SWITCH, private val 
     private var canTap = false
 
     init {
+        game.adManager.showInterstitial()
+
         guiCam = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
         guiCam.position.set(SWITCH.WIDTH * 1.5f, SWITCH.HEIGHT / 2, 0f)
 

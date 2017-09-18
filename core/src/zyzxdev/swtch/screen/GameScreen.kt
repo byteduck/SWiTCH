@@ -34,7 +34,7 @@ class GameScreen
  * *
  * @param tutorial Is it a tutorial?
  */
-(private val game: SWITCH, private val size: Boolean, private val mode: Boolean, private var tutorial: Boolean) : ScreenAdapter() {
+(private val game: SWITCH, private val size: Boolean, private val mode: Boolean, private var tutorial: Boolean, private val abnormal: Boolean) : ScreenAdapter() {
 
     private val guiCam: OrthographicCamera = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
     private val textCam: OrthographicCamera
@@ -120,15 +120,56 @@ class GameScreen
     }
 
     private fun populateGrid() {
-        val color = Util.rand.nextInt(3)
-        for (x in grid.indices)
-            for (y in 0..grid[x].size - 1)
-                grid[x][y]?.setColor(color)
+        var color = 0
+        var done = false
+
+        do{
+            color = Util.rand.nextInt(3)
+            for (x in grid.indices)
+                for (y in 0..grid[x].size - 1) {
+                    grid[x][y]?.setColor(color)
+                    grid[x][y]?.visible = true
+                }
+            if(abnormal){
+                for(i in 0..2){
+                    var x = 0
+                    var y = 0
+                    do{
+                        x = Util.rand.nextInt(this.grid.size)
+                        y = Util.rand.nextInt(this.grid.size)
+                    }while(!grid[x][y]!!.visible)
+
+                    grid[x][y]!!.visible = false
+                }
+
+                done = true
+
+                //Basically, this makes sure that the whole board is connected, by making sure that
+                //there are is no more than 1 other invisible square in a 1 square radius of each
+                //invisible square.
+                for(x in grid.indices)
+                    grid.indices
+                            .filter {!grid[x][it]!!.visible}
+                            .forEach{
+                                var numDist = 0
+                                for(x2 in grid.indices)
+                                    for(y2 in grid.indices)
+                                        if(!grid[x2][y2]!!.visible && Math.sqrt(Math.pow((x - x2).toDouble(), 2.0) + Math.pow((it - y2).toDouble(), 2.0)) <= Math.sqrt(2.0))
+                                            numDist++
+                                if(numDist > 1)
+                                    done = false
+                            }
+            }
+        }while(!done && abnormal)
 
         val mixUp = 20 + Util.rand.nextInt(20)
         for (i in 0..mixUp - 1) {
-            val x = Util.rand.nextInt(this.grid.size)
-            val y = Util.rand.nextInt(this.grid.size)
+            var x = 0
+            var y = 0
+            do{
+                x = Util.rand.nextInt(this.grid.size)
+                y = Util.rand.nextInt(this.grid.size)
+            }while(!grid[x][y]!!.visible)
             val change = if (Math.random() <= 0.5) "x" else "y"
             var x2 = if (change === "x") -1 else x
             var y2 = if (change === "y") -1 else y
@@ -169,13 +210,14 @@ class GameScreen
                 doUpdate = false
                 Util.slideCamera(guiCam, Util.Direction.RIGHT, manager, SWITCH.WIDTH, SWITCH.HEIGHT, Quart.IN, 0f, null)
                 Util.slideCamera(textCam, Util.Direction.RIGHT, manager, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat(), Quart.IN, 0f) { _, _ ->
+                    game.adManager.showInterstitial()
                     game.screen = MainMenuScreen(game)
                 }
             }
 
             for (x in grid.indices)
                 for(y in grid.indices){
-                    if(!grid[x][y]?.touchRectangle!!.contains(touchPoint.x, touchPoint.y)) continue
+                    if(!grid[x][y]!!.visible || !grid[x][y]?.touchRectangle!!.contains(touchPoint.x, touchPoint.y)) continue
                     if(tutorial && (x != currentTutorialTap.x.toInt() || y != currentTutorialTap.y.toInt())) continue
                     else{
                         nextTouchPoint()
@@ -183,7 +225,9 @@ class GameScreen
                     if (selectedSquare == null) {
                         selectedSquare = Vector2(x.toFloat(), y.toFloat())
                         grid[x][y]?.setSizeWithTween(squareSize * 0.85f, 0.15f)?.start(manager)
+                        game.clickOnSound?.play(0.5f)
                     } else {
+                        game.clickOffSound?.play(0.5f)
                         val square2 = grid[selectedSquare!!.x.toInt()][selectedSquare!!.y.toInt()]
                         square2?.setSizeWithTween(squareSize, 0.15f)?.start(manager)
                         //Check if square is adjacent to the selected square
@@ -225,6 +269,7 @@ class GameScreen
 
     private fun lose(showGameOver: Boolean) {
         doUpdate = false
+        game.errSound?.play()
         animateSquares(false, TweenCallback { type, source ->
             Util.slideCamera(guiCam, Util.Direction.RIGHT, manager, SWITCH.WIDTH, SWITCH.HEIGHT, Quart.IN, 0f, null)
             Util.slideCamera(textCam, Util.Direction.RIGHT, manager, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat(), Quart.IN, 0f) { type, source ->
@@ -238,12 +283,15 @@ class GameScreen
 
     private fun win() {
         doUpdate = false
+        game.completeSound?.play()
         updateScore(true)
         Tween.to(timer, Vector2Accessor.TYPE_XY, 0.6f + 0.05f * grid.size.toFloat() * 2f)
                 .target(maxTime, 0f)
                 .ease(Bounce.OUT)
                 .start(manager)
         animateSquares(false, TweenCallback { _, _ ->
+            if(score != 0 && score % 10 == 0)
+                game.adManager.showInterstitial()
             populateGrid()
             animateSquares(true, TweenCallback { _, _ -> doUpdate = true })
         })
@@ -264,11 +312,17 @@ class GameScreen
     }
 
     private fun checkGrid(): Boolean {
-        val col = grid[0][0]?.colorID
+        var col:Int? = 0
+        mloop@for(x in grid.indices)
+            for(y in grid.indices)
+                if(grid[x][y]!!.visible) {
+                    col = grid[x][y]?.colorID
+                    break@mloop
+                }
         for (x in grid.indices)
-            for (y in grid.indices)
-                if (grid[x][y]?.colorID != col)
-                    return false
+            grid.indices
+                    .filter { grid[x][it]!!.visible && grid[x][it]?.colorID != col }
+                    .forEach { return false }
         return true
     }
 
@@ -285,6 +339,7 @@ class GameScreen
         game.batch?.begin()
         for (x in grid.indices)
             for (y in grid.indices) {
+                if(!grid[x][y]!!.visible) continue
                 game.batch?.color = grid[x][y]?.color
                 val square = grid[x][y]?.renderRectangle
                 game.batch?.draw(Assets.getTexture("square"), square!!.x - square.width / 2f, square.y - square.height / 2f, square.width, square.height)

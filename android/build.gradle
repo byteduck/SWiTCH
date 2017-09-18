@@ -1,5 +1,5 @@
 android {
-    buildToolsVersion "26.0.0"
+    buildToolsVersion "26.0.1"
     compileSdkVersion 26
     sourceSets {
         main {
@@ -19,9 +19,25 @@ android {
     }
     defaultConfig {
         applicationId "zyzxdev.swtch"
-        minSdkVersion 9
+        minSdkVersion 19
         targetSdkVersion 26
     }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-project.txt'
+        }
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-project.txt'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.google.android.gms:play-services-ads:11.2.2'
 }
 
 

@@ -19,6 +19,7 @@ class Square {
     var colorID: Int = 0
     var tweenA: Tween? = null
     var tweenB: Tween? = null
+    var visible = true
 
     fun setColor(color: Int) {
         this.colorID = color

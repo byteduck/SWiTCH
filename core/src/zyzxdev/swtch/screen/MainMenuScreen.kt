@@ -17,7 +17,7 @@ import zyzxdev.swtch.util.FontLayoutManager
 import zyzxdev.swtch.SWITCH
 import zyzxdev.swtch.util.Util
 
-class MainMenuScreen(private val game: SWITCH) : ScreenAdapter() {
+class MainMenuScreen(private val game: SWITCH, private val initial:Boolean = false) : ScreenAdapter() {
     private val guiCam: OrthographicCamera
     private val textCam: OrthographicCamera
     private val touchPoint = Vector3()
@@ -30,10 +30,16 @@ class MainMenuScreen(private val game: SWITCH) : ScreenAdapter() {
     init {
 
         guiCam = OrthographicCamera(SWITCH.WIDTH, SWITCH.HEIGHT)
-        guiCam.position.set(SWITCH.WIDTH * 1.5f, SWITCH.HEIGHT / 2, 0f)
+        if(initial)
+            guiCam.position.set(-SWITCH.WIDTH / 2f, SWITCH.HEIGHT / 2, 0f)
+        else
+            guiCam.position.set(SWITCH.WIDTH * 1.5f, SWITCH.HEIGHT / 2, 0f)
 
         textCam = OrthographicCamera(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-        textCam.position.set(Gdx.graphics.width * 1.5f, Gdx.graphics.height / 2f, 0f)
+        if(initial)
+            textCam.position.set(-Gdx.graphics.width / 2f, Gdx.graphics.height / 2f, 0f)
+        else
+            textCam.position.set(Gdx.graphics.width * 1.5f, Gdx.graphics.height / 2f, 0f)
 
         /* PLAY BUTTON LAYOUT */
         val squareSize = SWITCH.WIDTH * 0.2f
@@ -63,7 +69,7 @@ class MainMenuScreen(private val game: SWITCH) : ScreenAdapter() {
                         if(playedTutorial)
                             game.screen = GamemodeScreen(game)
                         else
-                            game.screen = GameScreen(game, false, false, true)
+                            game.screen = GameScreen(game, false, false, true, false)
                     }
                 }
             }

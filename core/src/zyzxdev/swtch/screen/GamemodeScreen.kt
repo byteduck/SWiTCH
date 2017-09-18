@@ -23,8 +23,8 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
     private val manager: TweenManager
     private val touchPoint = Vector3()
 
-    private var selectedSize = false
-    private var selectedMode = false
+    private var selectedSize = 0 //0 = 3x3, 1 = 4x4, 2 = 4x4 abnormal
+    private var selectedMode = false //timed/not
     private var playHit = false
     //false - 3x3 or casual ||| true - 4x4 or timed
 
@@ -33,6 +33,7 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
     private val backButtonTap: Rectangle
     private val txt: Rectangle
     private val fxf: Rectangle
+    private val abn: Rectangle
     private val casual: Rectangle
     private val timed: Rectangle
     private val playButton: Rectangle
@@ -41,7 +42,7 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
     private val callback = { type: Int, source: BaseTween<*> ->
         if (type == TweenCallback.COMPLETE) {
             if (playHit)
-                game.screen = GameScreen(game, selectedSize, selectedMode, false)
+                game.screen = GameScreen(game, selectedSize != 0, selectedMode, false, selectedSize == 2)
             else
                 game.screen = MainMenuScreen(game)
         }
@@ -67,10 +68,13 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
         val iconSize = SWITCH.WIDTH * 0.2f
 
         /* 3x3 ICON LAYOUT */
-        txt = Rectangle(SWITCH.WIDTH * 0.3f - iconSize / 2f, SWITCH.HEIGHT * 0.7f - iconSize / 2, iconSize, iconSize)
+        txt = Rectangle(SWITCH.WIDTH * 0.2f - iconSize / 2f, SWITCH.HEIGHT * 0.7f - iconSize / 2, iconSize, iconSize)
 
         /* 4x4 ICON LAYOUT */
-        fxf = Rectangle(SWITCH.WIDTH * 0.7f - iconSize / 2f, SWITCH.HEIGHT * 0.7f - iconSize / 2, iconSize, iconSize)
+        fxf = Rectangle(SWITCH.WIDTH * 0.5f - iconSize / 2f, SWITCH.HEIGHT * 0.7f - iconSize / 2, iconSize, iconSize)
+
+        /* ABNORMAL ICON LAYOUT */
+        abn = Rectangle(SWITCH.WIDTH * 0.8f - iconSize / 2f, SWITCH.HEIGHT * 0.7f - iconSize / 2, iconSize, iconSize)
 
         /* CASUAL ICON LAYOUT */
         casual = Rectangle(SWITCH.WIDTH * 0.3f - iconSize / 2f, SWITCH.HEIGHT * 0.45f - iconSize / 2, iconSize, iconSize)
@@ -95,9 +99,11 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
                 Util.slideCamera(textCam, Util.Direction.RIGHT, manager, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat(), Quart.IN, 0f, callback)
             }
             if (txt.contains(touchPoint.x, touchPoint.y))
-                selectedSize = false
+                selectedSize = 0
             if (fxf.contains(touchPoint.x, touchPoint.y))
-                selectedSize = true
+                selectedSize = 1
+            if (abn.contains(touchPoint.x, touchPoint.y))
+                selectedSize = 2
             if (casual.contains(touchPoint.x, touchPoint.y))
                 selectedMode = false
             if (timed.contains(touchPoint.x, touchPoint.y))
@@ -134,11 +140,14 @@ class GamemodeScreen(private val game: SWITCH) : ScreenAdapter() {
         game.batch?.begin()
         game.batch?.draw(Assets.getTexture("squarePlay"), backButton.x, backButton.y, backButton.width, backButton.height)
 
-        color(!selectedSize)
+        color(selectedSize == 0)
         game.batch?.draw(Assets.getTexture("square3x3"), txt.x, txt.y, txt.width, txt.height)
 
-        color(selectedSize)
+        color(selectedSize == 1)
         game.batch?.draw(Assets.getTexture("square4x4"), fxf.x, fxf.y, fxf.width, fxf.height)
+
+        color(selectedSize == 2)
+        game.batch?.draw(Assets.getTexture("squareAbnormal"), abn.x, abn.y, abn.width, abn.height)
 
         color(!selectedMode)
         game.batch?.draw(Assets.getTexture("casual"), casual.x, casual.y, casual.width, casual.height)
