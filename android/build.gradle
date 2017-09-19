@@ -18,7 +18,7 @@ android {
         exclude 'META-INF/robovm/ios/robovm.xml'
     }
     defaultConfig {
-        applicationId "zyzxdev.swtch"
+        applicationId "qixl.swtch.android"
         minSdkVersion 19
         targetSdkVersion 26
     }
@@ -87,7 +87,7 @@ task run(type: Exec) {
     }
 
     def adb = path + "/platform-tools/adb"
-    commandLine "$adb", 'shell', 'am', 'start', '-n', 'zyzxdev.swtch/zyzxdev.swtch.AndroidLauncher'
+    commandLine "$adb", 'devices'
 }
 
 // sets up the Android Eclipse project, using the old Ant based build.

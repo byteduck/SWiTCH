@@ -18,7 +18,7 @@ allprojects {
     apply plugin: "eclipse"
     apply plugin: "idea"
 
-    version = '0.1'
+    version = '1.1'
     ext {
         appName = "SW!TCH"
         gdxVersion = '1.9.6'
@@ -46,6 +46,18 @@ project(":core") {
         compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
         compile fileTree(dir: '../libs', include: '*.jar')
         compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    }
+}
+
+project(":desktop") {
+    apply plugin: "java"
+
+
+    dependencies {
+        compile project(":core")
+        compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+
     }
 }
 

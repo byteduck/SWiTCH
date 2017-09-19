@@ -1,1 +1,1 @@
-[{"outputType":{"type":"APK"},"apkInfo":{"type":"MAIN","splits":[],"versionCode":1},"outputFile":{"path":"/home/aaron/AndroidStudioProjects/SWITCH/android/release/android-release.apk"},"properties":{"packageId":"zyzxdev.swtch","split":""}}]
+[{"outputType":{"type":"APK"},"apkInfo":{"type":"MAIN","splits":[],"versionCode":2},"path":"android-release.apk","properties":{"packageId":"qixl.swtch.android","split":"","minSdkVersion":"19"}}]
